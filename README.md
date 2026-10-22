@@ -78,7 +78,7 @@ adduser alice                     # home, groups and password in one step
 usermod -aG sudo alice            # optional: sudo
 ```
 
-Arch / Artix - `useradd` creates nothing by default, so pass all of it:
+Fedora / Arch / Artix - `useradd` creates nothing by default, so pass all of it:
 
 ```sh
 useradd -m -G wheel,aid_inet,aid_net_raw,input,video,tty alice
