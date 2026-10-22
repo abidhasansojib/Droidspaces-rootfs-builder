@@ -126,7 +126,7 @@ jobs:
           git push origin HEAD:main
 
   update-json:
-    if: ${{ github.event.inputs.update_json_only == 'true' }} && github.ref == 'refs/heads/main'
+    if: github.event.inputs.update_json_only == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
