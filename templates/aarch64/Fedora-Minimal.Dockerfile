@@ -208,7 +208,7 @@ RUN dnf -y install qemu-user-static && \
 
 # Stage 2: Export to scratch for extraction
 FROM scratch AS export
-LABEL droidspaces.name="Fedora Linux - Minimal" \
+LABEL droidspaces.name="Fedora Linux" \
       droidspaces.distro="Fedora" \
       droidspaces.description="Minimal Fedora rootfs with basic packages." \
       droidspaces.author="Droidspaces developers"

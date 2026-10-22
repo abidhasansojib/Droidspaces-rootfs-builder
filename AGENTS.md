@@ -40,6 +40,10 @@ All builds are offloaded to GitHub Actions.
   ```sh
   gh workflow run build-rootfs-releases.yml --ref <branch>
   ```
+- **Trigger Test Build for a single template / distro:**
+  ```sh
+  gh workflow run build-rootfs-releases.yml --ref <branch> -f target=Fedora
+  ```
 - **Trigger `rootfs.json` update only (without full rebuild):**
   ```sh
   gh workflow run build-rootfs-releases.yml -f update_json_only=true

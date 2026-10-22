@@ -2,9 +2,13 @@ name: Build and Release Droidspaces RootFS
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Template or distro to build (e.g. Fedora or Fedora-Minimal). Leave empty for default.'
+        type: string
+        default: ''
       update_json_only:
         description: 'Only regenerate rootfs.json from the latest release (skip build & release)'
         type: boolean
@@ -26,6 +30,8 @@ jobs:
       build_date: ${{ steps.prep.outputs.build_date }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Lint template labels
         run: python3 scripts/generate_rootfs_json.py --lint
@@ -33,9 +39,21 @@ jobs:
       - name: Build matrix from templates/<arch>/*.Dockerfile
         id: matrix
         run: |
-          MATRIX=$(find templates -mindepth 2 -name '*.Dockerfile' -printf '%P\n' | sort \
-            | jq -R -s -c --slurpfile archs archs.json '
+          TARGET="${{ github.event.inputs.target }}"
+          if [ -n "$TARGET" ]; then
+            FILES=$(find templates -mindepth 2 -name "*$TARGET*.Dockerfile" -printf '%P\n' | sort)
+          elif [ "${{ github.ref_name }}" != "main" ]; then
+            FILES=$(git diff --name-only origin/main...HEAD templates/ 2>/dev/null | grep '\.Dockerfile$' | sed 's|^templates/||' || true)
+            if [ -z "$FILES" ]; then
+              FILES=$(find templates -mindepth 2 -name '*Fedora*.Dockerfile' -printf '%P\n' | sort)
+            fi
+          else
+            FILES=$(find templates -mindepth 2 -name '*.Dockerfile' -printf '%P\n' | sort)
+          fi
+          echo "Files to build: $FILES"
+          MATRIX=$(echo "$FILES" | jq -R -s -c --slurpfile archs archs.json '
                 split("\n")[:-1]
+                | map(select(length > 0))
                 | map(capture("^(?<arch>[^/]+)/(?<name>.+)\\.Dockerfile$"))
                 | map(. + $archs[0][.arch])
                 | {include: .}')
@@ -70,6 +88,7 @@ jobs:
 
   release:
     needs: [setup, build]
+    if: github.ref == 'refs/heads/main' && (github.event.inputs.target == '' || github.event.inputs.target == null)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -107,7 +126,7 @@ jobs:
           git push origin HEAD:main
 
   update-json:
-    if: ${{ github.event.inputs.update_json_only == 'true' }}
+    if: ${{ github.event.inputs.update_json_only == 'true' }} && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: write
