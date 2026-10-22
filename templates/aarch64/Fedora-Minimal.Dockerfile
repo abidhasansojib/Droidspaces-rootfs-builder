@@ -3,8 +3,7 @@
 ARG TARGETPLATFORM
 FROM fedora:latest AS customizer
 
-# Update base system
-RUN dnf -y update && dnf clean all
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # Copy custom scripts first
 # Copy our bashrc script to the rootfs
@@ -13,8 +12,9 @@ COPY scripts/bashrc.sh /etc/profile.d/ds-aliases.sh
 # Make scripts executable
 RUN chmod +x /etc/profile.d/ds-aliases.sh
 
-# Install Minimal package set
-RUN dnf -y update && \
+# Configure DNF and install Minimal package set
+RUN (echo -e "zchunk=False\nfastestmirror=True\nmax_parallel_downloads=10" >> /etc/dnf/dnf.conf 2>/dev/null || true) && \
+    dnf -y update && \
     dnf -y install \
     # Core utilities
     bash \
